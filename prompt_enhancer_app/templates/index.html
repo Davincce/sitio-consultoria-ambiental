@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Enhancer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Prompt Enhancer</h1>
+
+        <form id="promptForm" method="POST" action="{{ url_for('enhance_prompt_route') }}">
+            <div class="form-group">
+                <label for="initialPrompt">Your Initial Prompt:</label>
+                <textarea id="initialPrompt" name="initialPrompt" rows="5" placeholder="Enter your initial prompt here..."></textarea>
+                <button type="button" id="copyPromptButton" class="copy-btn">Copy Prompt</button>
+            </div>
+
+            <div class="form-group">
+                <label for="context">Context:</label>
+                <input type="text" id="context" name="context" placeholder="What background information is relevant?">
+            </div>
+
+            <div class="form-group">
+                <label for="tone">Desired Tone:</label>
+                <input type="text" id="tone" name="tone" placeholder="e.g., Formal, Casual, Humorous">
+            </div>
+
+            <div class="form-group">
+                <label for="outputFormat">Desired Output Format:</label>
+                <input type="text" id="outputFormat" name="outputFormat" placeholder="e.g., Email, Code Snippet, Summary Paragraph">
+            </div>
+
+            <div class="form-group">
+                <label for="constraints">Constraints/Keywords:</label>
+                <textarea id="constraints" name="constraints" rows="3" placeholder="e.g., Keywords to include/exclude, length limits"></textarea>
+            </div>
+
+            <button type="submit">Enhance Prompt</button>
+        </form>
+
+        <div id="api-suggestions" class="suggestions-container">
+            <h2>Enhanced Prompt:</h2>
+            <div id="enhancedPromptOutput">
+                <p>Click "Enhance Prompt" to see suggestions here.</p>
+            </div>
+            <h3>Raw API Response (for debugging):</h3>
+            <pre id="rawApiResponse"></pre>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('promptForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const formData = new FormData(this);
+            const suggestionsOutput = document.getElementById('enhancedPromptOutput');
+            const rawApiResponseOutput = document.getElementById('rawApiResponse');
+
+            suggestionsOutput.innerHTML = '<p>Loading...</p>'; // Show loading state
+            rawApiResponseOutput.textContent = '';
+
+            try {
+                const response = await fetch("{{ url_for('enhance_prompt_route') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Assuming 'result' contains the API response.
+                    // You need to adjust the next line based on the actual structure of the Gemini API response.
+                    // For example, if the enhanced prompt is in result.candidates[0].content.parts[0].text
+                    suggestionsOutput.innerHTML = ''; // Clear previous suggestions
+                    rawApiResponseOutput.textContent = JSON.stringify(result, null, 2);
+
+                    if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0]) {
+                        const enhancedText = result.candidates[0].content.parts[0].text;
+                        
+                        // Display the enhanced prompt
+                        const promptElement = document.createElement('div');
+                        promptElement.classList.add('suggestion-item');
+                        
+                        const promptText = document.createElement('p');
+                        promptText.innerHTML = enhancedText.replace(/\n/g, '<br>');
+                        promptElement.appendChild(promptText);
+
+                        const applyButton = document.createElement('button');
+                        applyButton.textContent = 'Use this Enhanced Prompt';
+                        applyButton.classList.add('apply-suggestion-btn');
+                        applyButton.onclick = function() {
+                            document.getElementById('initialPrompt').value = enhancedText;
+                        };
+                        promptElement.appendChild(applyButton);
+                        suggestionsOutput.appendChild(promptElement);
+
+                    } else if (result.error) {
+                        let errorDetail = result.error;
+                        if(result.details) errorDetail += `\nDetails: ${JSON.stringify(result.details, null, 2)}`;
+                        suggestionsOutput.innerHTML = `<p style="color: red;">Error from API: ${errorDetail.replace(/\n/g, '<br>')}</p>`;
+                    } else {
+                         suggestionsOutput.innerHTML = '<p style="color: red;">No enhanced prompt found in API response.</p>';
+                    }
+                } else {
+                    let errorMsg = `Error: ${response.status} ${response.statusText}`;
+                    if (result && result.error) {
+                        errorMsg = `Error: ${result.error}`;
+                         if(result.details) errorMsg += `\nDetails: ${JSON.stringify(result.details, null, 2)}`;
+                    } else if (result) {
+                        errorMsg += `\nDetails: ${JSON.stringify(result, null, 2)}`;
+                    }
+                    suggestionsOutput.innerHTML = `<p style="color: red;">${errorMsg.replace(/\n/g, '<br>')}</p>`;
+                    if (result) { // result might be null if response is not JSON
+                       rawApiResponseOutput.textContent = JSON.stringify(result, null, 2);
+                    } else {
+                       const responseText = await response.text(); // Try to get raw text
+                       rawApiResponseOutput.textContent = `Response was not valid JSON. Raw response: ${responseText}`;
+                    }
+                }
+            } catch (error) {
+                suggestionsOutput.innerHTML = `<p style="color: red;">JavaScript error: ${error.toString()}</p>`;
+                rawApiResponseOutput.textContent = `Fetch API failed: ${error.toString()}`;
+            }
+        });
+
+        document.getElementById('copyPromptButton').addEventListener('click', function() {
+            const initialPromptTextarea = document.getElementById('initialPrompt');
+            const textToCopy = initialPromptTextarea.value;
+            const copyButton = this;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy).then(function() {
+                    // Success!
+                    const originalText = copyButton.textContent;
+                    copyButton.textContent = 'Copied!';
+                    setTimeout(function() {
+                        copyButton.textContent = originalText;
+                    }, 2000); // Reset text after 2 seconds
+                }).catch(function(err) {
+                    // Error
+                    console.error('Failed to copy text: ', err);
+                    alert('Failed to copy text. See console for details.');
+                });
+            } else {
+                // Fallback for older browsers (less common now)
+                initialPromptTextarea.select();
+                try {
+                    document.execCommand('copy');
+                    const originalText = copyButton.textContent;
+                    copyButton.textContent = 'Copied! (fallback)';
+                    setTimeout(function() {
+                        copyButton.textContent = originalText;
+                    }, 2000);
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    alert('Failed to copy text using fallback. See console for details.');
+                }
+                window.getSelection().removeAllRanges(); // Deselect
+            }
+        });
+    </script>
+</body>
+</html>
