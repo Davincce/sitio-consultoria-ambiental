@@ -10,6 +10,19 @@ body {
     min-height: 100vh;
 }
 
+/* Visually hidden class for accessibility */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap; /* added */
+    border: 0;
+}
+
 .container {
     background-color: #fff;
     padding: 30px;
@@ -17,19 +30,369 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 600px;
+    overflow-x: hidden; /* Prevent horizontal scroll if content is too wide during step transitions */
 }
+
+/* Step Indicator Styles */
+.step-indicator-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 0 10px; /* Add some padding so indicators don't touch edges */
+}
+
+.step-indicator {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 10px 15px; /* Increased padding */
+    border-radius: 25px; /* More rounded */
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: 2px solid transparent; /* For active state */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.step-indicator-line {
+    flex-grow: 1;
+    height: 2px;
+    background-color: #e9ecef;
+    margin: 0 5px; /* Adjust spacing */
+}
+
+.step-indicator.active {
+    background-color: #0056b3; /* Darker blue from copy-btn */
+    color: white;
+    border-color: #004085; /* Even darker blue for border */
+    font-weight: bold;
+}
+
+.step-indicator.completed {
+    background-color: #388E3C; /* Darker Green from apply-suggestion-btn */
+    color: white;
+}
+.step-indicator.completed:not(.active):hover {
+    background-color: #2E7D32; /* Darken completed on hover */
+}
+
+
+/* Prompt Step Styles */
+.prompt-step {
+    /* border: 1px solid #eee; 
+    padding: 20px; 
+    margin-bottom: 20px; */
+    /* Basic styling, can be enhanced */
+    animation: fadeInStep 0.5s ease-in-out;
+}
+
+@keyframes fadeInStep {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-title { /* No longer visually hidden, but can be styled subtly */
+    font-size: 1.5em; /* 24px if base is 16px */
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Export Button Styling (shared by current and all) */
+.export-btn {
+    background-color: #ffc107; /* Bootstrap warning yellow */
+    color: #212529; /* Dark text for yellow background */
+    border: 1px solid #ddae08;
+}
+.export-btn:hover {
+    background-color: #e0a800;
+}
+
+.save-library-btn {
+    background-color: #28a745; /* Bootstrap success green */
+    color: white;
+}
+.save-library-btn:hover {
+    background-color: #218838;
+}
+
+/* Container for View Library and Import buttons */
+.main-actions-bottom {
+    display: flex;
+    justify-content: center; /* Center items if they don't fill space */
+    align-items: center;
+    gap: 15px; /* Space between buttons/sections */
+    margin-top: 30px;
+    padding: 15px;
+    border-top: 1px solid #ced4da; /* Similar to suggestions container */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.view-library-btn {
+    /* display: block; */ /* No longer needed due to flex */
+    /* margin: 20px auto; */ /* No longer needed */
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    background-color: #6c757d; /* Bootstrap secondary gray */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.view-library-btn:hover {
+    background-color: #5a6268;
+}
+
+/* Import Section Styling */
+.import-section {
+    display: flex;
+    flex-direction: column; /* Stack label and actions */
+    align-items: center; /* Center items within the section */
+}
+
+.import-btn-label {
+    background-color: #17a2b8; /* Bootstrap info blue */
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: inline-block; /* Or block if it takes full width */
+}
+.import-btn-label:hover {
+    background-color: #138496;
+}
+
+#importedFileActions p {
+    font-size: 0.9em;
+    color: #333;
+}
+
+.import-action-btn {
+    background-color: #6f42c1; /* Custom purple */
+    color: white;
+    padding: 8px 15px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+    transition: background-color 0.3s ease;
+}
+.import-action-btn:hover {
+    background-color: #5a32a3;
+}
+.import-action-btn:disabled {
+    background-color: #e0e0e0;
+    color: #909090;
+    cursor: not-allowed;
+}
+.import-action-btn:disabled:hover {
+     background-color: #e0e0e0;
+}
+
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+    animation: fadeInModal 0.3s ease-out;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto; /* 10% from the top and centered */
+    padding: 25px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 700px; /* Max width */
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.close-modal-btn {
+    color: #aaa;
+    float: right; /* Positioned to the top-right */
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.close-modal-btn:hover,
+.close-modal-btn:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-content h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Prompt Library List Styles */
+.library-list {
+    max-height: 400px; /* Or whatever height you prefer */
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+    margin-top: 15px;
+}
+
+.library-actions-top {
+    display: flex;
+    justify-content: flex-end; /* Position export all button to the right */
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+.library-actions-top .export-btn { /* Specific styling if needed, or rely on general .export-btn */
+    padding: 8px 15px;
+}
+
+
+.prompt-items-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.prompt-item-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 8px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+}
+.prompt-item-entry:last-child {
+    border-bottom: none;
+}
+.prompt-item-entry:hover {
+    background-color: #f9f9f9;
+}
+
+.prompt-item-name {
+    font-weight: 500;
+    color: #0056b3; /* Link-like color */
+    flex-grow: 1;
+}
+
+.prompt-item-timestamp {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-left: 15px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.prompt-item-actions button {
+    padding: 5px 10px;
+    font-size: 0.9em;
+    margin-left: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.load-prompt-btn {
+    background-color: #388E3C; /* apply-suggestion-btn green */
+    color: white;
+    border-color: #388E3C;
+}
+.load-prompt-btn:hover {
+    background-color: #2E7D32;
+}
+
+.delete-prompt-btn {
+    background-color: #dc3545; /* Bootstrap danger red */
+    color: white;
+    border-color: #dc3545;
+}
+.delete-prompt-btn:hover {
+    background-color: #c82333;
+}
+
+
+/* Navigation Button Styles */
+.navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.navigation-buttons button {
+    padding: 10px 20px;
+    font-size: 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.navigation-buttons .next-btn {
+    background-color: #0056b3; /* Darker blue from copy-btn */
+    color: white;
+}
+.navigation-buttons .next-btn:hover {
+    background-color: #004085;
+}
+
+.navigation-buttons .prev-btn {
+    background-color: #6c757d; /* Gray for previous */
+    color: white;
+}
+.navigation-buttons .prev-btn:hover {
+    background-color: #5a6268;
+}
+
+/* Ensure submit button in last step also has similar styling if desired */
+#step-4 .navigation-buttons button[type="submit"] {
+     /* Uses existing button[type="submit"] styles, which are fine */
+     /* If specific styling needed: */
+    /* background-color: #145ab2; */
+    /* color: white; */
+}
+
 
 h1 {
     color: #1c1e21;
     text-align: center;
     margin-bottom: 25px;
     font-size: 28px;
+    font-weight: 600; /* Slightly bolder H1 */
 }
+
+/* .suggestions-container, body rule already defined above, removing duplicate */
 
 .suggestions-container {
     margin-top: 30px;
     padding-top: 20px;
-    border-top: 1px solid #dddfe2;
+    border-top: 1px solid #ced4da; /* Darker separator line */
 }
 
 .suggestions-container h2 {
@@ -45,17 +408,38 @@ h1 {
     margin-bottom: 10px;
 }
 
-#enhancedPromptOutput p,
+#enhancedPromptOutput p, /* This will be overridden by .suggestion-item p for suggestions */
 #rawApiResponse {
     background-color: #f7f7f7;
     padding: 15px;
     border-radius: 6px;
-    border: 1px solid #e9e9e9;
-    white-space: pre-wrap; /* Allows line breaks and preserves white space */
-    word-wrap: break-word; /* Breaks long words to prevent overflow */
+    border: 1px solid #e0e0e0; /* Slightly darker border for these boxes */
+    white-space: pre-wrap; 
+    word-wrap: break-word; 
     font-size: 15px;
     line-height: 1.6;
 }
+
+/* Styling for loading and error messages */
+.loading-message, .error-message {
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    font-size: 15px;
+    text-align: center;
+}
+
+.loading-message {
+    background-color: #e0e0e0; /* Neutral gray for loading */
+    color: #333;
+}
+
+.error-message {
+    background-color: #f8d7da; /* Bootstrap's danger background */
+    color: #721c24; /* Bootstrap's danger text */
+    border: 1px solid #f5c6cb; /* Bootstrap's danger border */
+}
+
 
 #rawApiResponse {
     max-height: 200px;
@@ -79,7 +463,7 @@ h1 {
 }
 
 .apply-suggestion-btn {
-    background-color: #4CAF50; /* Green */
+    background-color: #388E3C; /* Darker Green */
     color: white;
     padding: 8px 15px;
     border: none;
@@ -93,11 +477,11 @@ h1 {
 }
 
 .apply-suggestion-btn:hover {
-    background-color: #45a049;
+    background-color: #2E7D32; /* Even Darker Green on hover */
 }
 
 .copy-btn {
-    background-color: #007bff; /* Standard blue */
+    background-color: #0056b3; /* Darker Blue */
     color: white;
     padding: 6px 12px;
     border: none;
@@ -106,13 +490,24 @@ h1 {
     font-size: 13px;
     font-weight: normal;
     transition: background-color 0.3s ease;
-    display: block; /* Make it a block to position it below the textarea */
-    margin-top: 8px; /* Add some space above the button */
-    float: right; /* Position it to the right */
+    /* display: block; Removed */
+    margin-top: 10px; /* Adjusted margin */
+    /* float: right; Removed */
+    width: auto; /* Allow button to size to content */
+    padding: 8px 16px; /* Slightly larger padding for easier clicking */
+    display: inline-block; /* To allow margin-top and auto width */
 }
 
+.form-group > .copy-btn { /* More specific selector to center it if needed */
+    display: block; /* Or inline-block and text-align:center on parent */
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content; /* Or a specific max-width */
+}
+
+
 .copy-btn:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+    background-color: #004085; /* Even Darker Blue on hover */
 }
 
 .form-group {
@@ -130,7 +525,7 @@ h1 {
 .form-group textarea {
     width: 100%;
     padding: 12px;
-    border: 1px solid #dddfe2;
+    border: 1px solid #868e96; /* Darker border for inputs */
     border-radius: 6px;
     box-sizing: border-box; /* Ensures padding doesn't affect overall width */
     font-size: 16px;
@@ -143,11 +538,11 @@ h1 {
 
 .form-group input[type="text"]::placeholder,
 .form-group textarea::placeholder {
-    color: #90949c;
+    color: #6c757d; /* Darker placeholder text */
 }
 
 button[type="submit"] {
-    background-color: #1877f2; /* Original blue */
+    background-color: #145ab2; /* Darker Blue for submit */
     color: white;
     padding: 12px 20px;
     border: none;
@@ -160,8 +555,37 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-    background-color: #166fe5;
+    background-color: #104a93; /* Even darker blue for submit hover */
 }
+
+button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+button:disabled:hover {
+    background-color: #cccccc; /* Keep same color when hovered if disabled */
+}
+
+
+/* Focus visible styling for better accessibility */
+*:focus-visible {
+    outline: 3px solid #004085; /* Using a darker blue for focus outline, matching copy-btn hover */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 64, 133, 0.25); /* Adjusted shadow color */
+}
+
+/* Fallback for older browsers that don't support :focus-visible */
+*:focus {
+    outline: 2px solid #004085; /* Matching focus-visible */
+    outline-offset: 1px;
+}
+/* Remove the fallback if :focus-visible is supported, to avoid double outlines */
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
 
 /* Adjustments for smaller screens if necessary */
 @media (max-width: 600px) {

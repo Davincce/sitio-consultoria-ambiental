@@ -1,7 +1,13 @@
 from flask import Flask, render_template, request, jsonify
 import requests # Standard library for making HTTP requests
+import os
+import json
+import uuid
+from datetime import datetime
 
 app = Flask(__name__)
+
+PROMPT_LIBRARY_FILE = 'prompt_library.json'
 
 # IMPORTANT: Replace "YOUR_API_KEY_HERE" with your actual Gemini API Key.
 # In a production environment, API keys should not be hardcoded. 
@@ -11,7 +17,41 @@ GEMINI_API_KEY = "YOUR_API_KEY_HERE"
 # This is a placeholder. You'll need to find the correct API endpoint for Gemini.
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent" # Example endpoint
 
-def call_gemini_api(initial_prompt, context, tone, output_format, constraints):
+# --- Prompt Library Helper Functions ---
+def load_prompts():
+    """Loads prompts from the JSON storage file."""
+    if not os.path.exists(PROMPT_LIBRARY_FILE):
+        return []
+    try:
+        with open(PROMPT_LIBRARY_FILE, 'r', encoding='utf-8') as f:
+            prompts = json.load(f)
+        # Ensure all prompts have the necessary fields, provide defaults for older data
+        for prompt in prompts:
+            prompt.setdefault('id', uuid.uuid4().hex) # Add id if missing
+            prompt.setdefault('name', 'Untitled Prompt')
+            prompt.setdefault('timestamp', datetime.utcnow().isoformat())
+            prompt.setdefault('initialPrompt', '')
+            prompt.setdefault('context', '')
+            prompt.setdefault('tone', '')
+            prompt.setdefault('outputFormat', '')
+            prompt.setdefault('constraints', '')
+        return prompts
+    except (IOError, json.JSONDecodeError) as e:
+        print(f"Error loading prompts: {e}")
+        return []
+
+def save_prompts(prompts):
+    """Saves prompts to the JSON storage file."""
+    try:
+        with open(PROMPT_LIBRARY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(prompts, f, indent=4)
+        return True
+    except (IOError, TypeError) as e: # TypeError for json.dump if prompts are not serializable
+        print(f"Error saving prompts: {e}")
+        return False
+
+# --- Gemini API Call Function ---
+def call_gemini_api(initial_prompt, context, tone, output_format, constraints): # Not directly used by library but part of the app
     """
     Constructs a prompt and calls the Gemini API.
     """
@@ -90,6 +130,63 @@ def enhance_prompt_route():
         # For now, just return the raw API response.
         # In the next step, we'll process this and display it nicely.
         return jsonify(api_response)
+
+# --- Prompt Library Routes ---
+@app.route('/library/save', methods=['POST'])
+def save_prompt_to_library():
+    data = request.json
+    if not data or 'name' not in data or not data.get('initialPrompt'): # Ensure name and initialPrompt are present
+        return jsonify({"error": "Prompt name and content are required."}), 400
+
+    prompts = load_prompts()
+    
+    new_prompt = {
+        "id": uuid.uuid4().hex,
+        "name": data.get('name', 'Untitled Prompt'),
+        "timestamp": datetime.utcnow().isoformat(),
+        "initialPrompt": data.get('initialPrompt', ''),
+        "context": data.get('context', ''),
+        "tone": data.get('tone', ''),
+        "outputFormat": data.get('outputFormat', ''),
+        "constraints": data.get('constraints', '')
+        # Add any other fields you expect from the frontend
+    }
+    prompts.append(new_prompt)
+    
+    if save_prompts(prompts):
+        return jsonify(new_prompt), 201 # 201 Created
+    else:
+        return jsonify({"error": "Failed to save prompt to library."}), 500
+
+@app.route('/library', methods=['GET'])
+def get_library_prompts():
+    prompts = load_prompts()
+    # Sort by timestamp, newest first
+    prompts_sorted = sorted(prompts, key=lambda p: p.get('timestamp', ''), reverse=True)
+    return jsonify(prompts_sorted)
+
+@app.route('/library/<prompt_id>', methods=['GET'])
+def get_library_prompt(prompt_id):
+    prompts = load_prompts()
+    prompt = next((p for p in prompts if p.get('id') == prompt_id), None)
+    if prompt:
+        return jsonify(prompt)
+    else:
+        return jsonify({"error": "Prompt not found."}), 404
+
+@app.route('/library/<prompt_id>', methods=['DELETE'])
+def delete_library_prompt(prompt_id):
+    prompts = load_prompts()
+    initial_length = len(prompts)
+    prompts = [p for p in prompts if p.get('id') != prompt_id]
+    
+    if len(prompts) == initial_length:
+        return jsonify({"error": "Prompt not found to delete."}), 404
+
+    if save_prompts(prompts):
+        return "", 204 # No Content, success
+    else:
+        return jsonify({"error": "Failed to delete prompt from library."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

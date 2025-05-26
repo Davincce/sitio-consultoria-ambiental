@@ -7,58 +7,150 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
+    <main class="container">
         <h1>Prompt Enhancer</h1>
 
-        <form id="promptForm" method="POST" action="{{ url_for('enhance_prompt_route') }}">
-            <div class="form-group">
-                <label for="initialPrompt">Your Initial Prompt:</label>
-                <textarea id="initialPrompt" name="initialPrompt" rows="5" placeholder="Enter your initial prompt here..."></textarea>
-                <button type="button" id="copyPromptButton" class="copy-btn">Copy Prompt</button>
+        <section id="prompt-form-section" aria-labelledby="form-section-heading">
+            <h2 id="form-section-heading" class="visually-hidden">Prompt Input Form</h2>
+            <form id="promptForm" method="POST" action="{{ url_for('enhance_prompt_route') }}">
+
+                <!-- Step Progress Indicator (Optional but good for UX) -->
+                <div class="step-indicator-container">
+                    <div class="step-indicator active" data-step-target="1">1. Idea</div>
+                    <div class="step-indicator-line"></div>
+                    <div class="step-indicator" data-step-target="2">2. Details</div>
+                    <div class="step-indicator-line"></div>
+                    <div class="step-indicator" data-step-target="3">3. Output</div>
+                    <div class="step-indicator-line"></div>
+                    <div class="step-indicator" data-step-target="4">4. Enhance</div>
+                </div>
+
+                <!-- Step 1: Core Idea -->
+                <div id="step-1" class="prompt-step active-step">
+                    <h3 class="step-title visually-hidden">Step 1: Core Idea</h3>
+                    <div class="form-group">
+                        <label for="initialPrompt">Your Initial Prompt:</label>
+                        <textarea id="initialPrompt" name="initialPrompt" rows="5" placeholder="Enter your initial prompt here..." aria-describedby="initialPromptHelp"></textarea>
+                        <small id="initialPromptHelp" class="form-text text-muted visually-hidden">Enter the initial prompt you want to enhance.</small>
+                        <button type="button" id="copyPromptButton" class="copy-btn">Copy Prompt</button>
+                    </div>
+                    <div class="navigation-buttons">
+                        <button type="button" class="next-btn">Next &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Add Details -->
+                <div id="step-2" class="prompt-step" style="display: none;">
+                    <h3 class="step-title visually-hidden">Step 2: Add Details</h3>
+                    <div class="form-group">
+                        <label for="context">Context:</label>
+                        <input type="text" id="context" name="context" placeholder="What background information is relevant?" aria-describedby="contextHelp">
+                        <small id="contextHelp" class="form-text text-muted visually-hidden">Provide relevant background information or context for the prompt.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="constraints">Constraints/Keywords:</label>
+                        <textarea id="constraints" name="constraints" rows="3" placeholder="e.g., Keywords to include/exclude, length limits" aria-describedby="constraintsHelp"></textarea>
+                        <small id="constraintsHelp" class="form-text text-muted visually-hidden">List any constraints, keywords to include or exclude, or length limits.</small>
+                    </div>
+                    <div class="navigation-buttons">
+                        <button type="button" class="prev-btn">&larr; Previous</button>
+                        <button type="button" class="next-btn">Next &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Define Output -->
+                <div id="step-3" class="prompt-step" style="display: none;">
+                    <h3 class="step-title visually-hidden">Step 3: Define Output</h3>
+                    <div class="form-group">
+                        <label for="tone">Desired Tone:</label>
+                        <input type="text" id="tone" name="tone" placeholder="e.g., Formal, Casual, Humorous" aria-describedby="toneHelp">
+                        <small id="toneHelp" class="form-text text-muted visually-hidden">Specify the desired tone for the enhanced prompt (e.g., Formal, Casual).</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="outputFormat">Desired Output Format:</label>
+                        <input type="text" id="outputFormat" name="outputFormat" placeholder="e.g., Email, Code Snippet, Summary Paragraph" aria-describedby="outputFormatHelp">
+                        <small id="outputFormatHelp" class="form-text text-muted visually-hidden">Specify the desired output format (e.g., Email, Code Snippet).</small>
+                    </div>
+                    <div class="navigation-buttons">
+                        <button type="button" class="prev-btn">&larr; Previous</button>
+                        <button type="button" class="next-btn">Next &rarr;</button>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Enhance -->
+                <div id="step-4" class="prompt-step" style="display: none;">
+                    <h3 class="step-title visually-hidden">Step 4: Enhance</h3>
+                    <p>You're all set! Click the button below to enhance your prompt, save it to your library, or export it.</p>
+                    <div class="navigation-buttons">
+                        <button type="button" class="prev-btn">&larr; Previous</button>
+                        <button type="button" id="exportCurrentPromptBtn" class="export-btn">Export Current Prompt</button>
+                        <button type="button" id="saveToLibraryBtn" class="save-library-btn">Save to Library</button>
+                        <button type="submit" id="submitEnhancePrompt">Enhance Prompt</button>
+                    </div>
+                </div>
+
+            </form>
+        </section>
+
+        <!-- Prompt Library Modal -->
+        <div id="promptLibraryModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-modal-btn">&times;</span>
+                <h2>Prompt Library</h2>
+                <div class="library-actions-top">
+                    <button type="button" id="exportAllPromptsBtn" class="export-btn">Export All Prompts</button>
+                </div>
+                <div id="promptLibraryList" class="library-list">
+                    <!-- Prompts will be listed here -->
+                    <p>Loading library...</p>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label for="context">Context:</label>
-                <input type="text" id="context" name="context" placeholder="What background information is relevant?">
+        </div>
+        
+        <div class="main-actions-bottom"> <!-- Container for view library and import -->
+            <button type="button" id="viewLibraryBtn" class="view-library-btn">View Prompt Library</button>
+            <div class="import-section">
+                <label for="importFile" class="import-btn-label">Import Prompt(s) from File</label>
+                <input type="file" id="importFile" accept=".json" class="visually-hidden">
+                <!-- Buttons to process the imported file will be added via JS or could be here if always visible -->
+                <div id="importedFileActions" style="display:none; margin-top:10px;">
+                    <p id="loadedFileName" style="margin-bottom: 5px; font-style: italic;"></p>
+                    <button type="button" id="loadImportedToEditorBtn" class="import-action-btn">Load to Editor (Single)</button>
+                    <button type="button" id="addImportedToLibraryBtn" class="import-action-btn">Add to Library (Multiple)</button>
+                </div>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label for="tone">Desired Tone:</label>
-                <input type="text" id="tone" name="tone" placeholder="e.g., Formal, Casual, Humorous">
-            </div>
 
-            <div class="form-group">
-                <label for="outputFormat">Desired Output Format:</label>
-                <input type="text" id="outputFormat" name="outputFormat" placeholder="e.g., Email, Code Snippet, Summary Paragraph">
-            </div>
-
-            <div class="form-group">
-                <label for="constraints">Constraints/Keywords:</label>
-                <textarea id="constraints" name="constraints" rows="3" placeholder="e.g., Keywords to include/exclude, length limits"></textarea>
-            </div>
-
-            <button type="submit">Enhance Prompt</button>
-        </form>
-
-        <div id="api-suggestions" class="suggestions-container">
-            <h2>Enhanced Prompt:</h2>
-            <div id="enhancedPromptOutput">
+        <section id="suggestions-section" class="suggestions-container" aria-labelledby="suggestions-section-heading" style="display: none;"> <!-- Hide suggestions area initially -->
+            <h2 id="suggestions-section-heading">Enhanced Prompt:</h2>
+            <div id="enhancedPromptOutput" aria-live="polite" aria-atomic="true">
                 <p>Click "Enhance Prompt" to see suggestions here.</p>
             </div>
-            <h3>Raw API Response (for debugging):</h3>
-            <pre id="rawApiResponse"></pre>
-        </div>
-    </div>
+            <h3 id="raw-response-heading">Raw API Response (for debugging):</h3>
+            <pre id="rawApiResponse" aria-labelledby="raw-response-heading"></pre>
+        </section>
+    </main>
 
     <script>
         document.getElementById('promptForm').addEventListener('submit', async function(event) {
             event.preventDefault(); // Prevent default form submission
 
-            const formData = new FormData(this);
+            // Show suggestions section if it was hidden
+            document.getElementById('suggestions-section').style.display = ''; 
+
+            const formData = new FormData(this); // 'this' is the form
             const suggestionsOutput = document.getElementById('enhancedPromptOutput');
             const rawApiResponseOutput = document.getElementById('rawApiResponse');
+            // The submit button is now the one in the last step
+            const submitButton = document.getElementById('submitEnhancePrompt'); 
 
-            suggestionsOutput.innerHTML = '<p>Loading...</p>'; // Show loading state
+            const originalButtonText = submitButton.textContent;
+            submitButton.textContent = 'Enhancing...';
+            submitButton.disabled = true;
+
+            suggestionsOutput.innerHTML = '<p class="loading-message">Loading...</p>'; 
+            suggestionsOutput.setAttribute('aria-busy', 'true');
             rawApiResponseOutput.textContent = '';
 
             try {
@@ -84,14 +176,15 @@
                         promptElement.classList.add('suggestion-item');
                         
                         const promptText = document.createElement('p');
-                        promptText.innerHTML = enhancedText.replace(/\n/g, '<br>');
+                        promptText.innerHTML = enhancedText.replace(/\n/g, '<br>'); // Keep for display
                         promptElement.appendChild(promptText);
 
                         const applyButton = document.createElement('button');
                         applyButton.textContent = 'Use this Enhanced Prompt';
+                        applyButton.setAttribute('aria-label', 'Apply this enhanced prompt to the initial prompt field');
                         applyButton.classList.add('apply-suggestion-btn');
                         applyButton.onclick = function() {
-                            document.getElementById('initialPrompt').value = enhancedText;
+                            document.getElementById('initialPrompt').value = enhancedText; // Use raw text for value
                         };
                         promptElement.appendChild(applyButton);
                         suggestionsOutput.appendChild(promptElement);
@@ -99,9 +192,9 @@
                     } else if (result.error) {
                         let errorDetail = result.error;
                         if(result.details) errorDetail += `\nDetails: ${JSON.stringify(result.details, null, 2)}`;
-                        suggestionsOutput.innerHTML = `<p style="color: red;">Error from API: ${errorDetail.replace(/\n/g, '<br>')}</p>`;
+                        suggestionsOutput.innerHTML = `<p role="alert" class="error-message">Error from API: ${errorDetail.replace(/\n/g, '<br>')}</p>`;
                     } else {
-                         suggestionsOutput.innerHTML = '<p style="color: red;">No enhanced prompt found in API response.</p>';
+                         suggestionsOutput.innerHTML = '<p role="alert" class="error-message">No enhanced prompt found in API response.</p>';
                     }
                 } else {
                     let errorMsg = `Error: ${response.status} ${response.statusText}`;
@@ -111,19 +204,432 @@
                     } else if (result) {
                         errorMsg += `\nDetails: ${JSON.stringify(result, null, 2)}`;
                     }
-                    suggestionsOutput.innerHTML = `<p style="color: red;">${errorMsg.replace(/\n/g, '<br>')}</p>`;
-                    if (result) { // result might be null if response is not JSON
+                    suggestionsOutput.innerHTML = `<p role="alert" class="error-message">${errorMsg.replace(/\n/g, '<br>')}</p>`;
+                    if (result) { 
                        rawApiResponseOutput.textContent = JSON.stringify(result, null, 2);
                     } else {
-                       const responseText = await response.text(); // Try to get raw text
+                       const responseText = await response.text(); 
                        rawApiResponseOutput.textContent = `Response was not valid JSON. Raw response: ${responseText}`;
                     }
                 }
             } catch (error) {
-                suggestionsOutput.innerHTML = `<p style="color: red;">JavaScript error: ${error.toString()}</p>`;
+                suggestionsOutput.innerHTML = `<p role="alert" class="error-message">JavaScript error: ${error.toString()}</p>`;
                 rawApiResponseOutput.textContent = `Fetch API failed: ${error.toString()}`;
+            } finally {
+                suggestionsOutput.setAttribute('aria-busy', 'false');
+                if (submitButton) { // Check if submitButton exists
+                    submitButton.textContent = originalButtonText;
+                    submitButton.disabled = false;
+                }
             }
         });
+        
+        // Stepper Navigation Logic
+        const steps = Array.from(document.querySelectorAll('.prompt-step'));
+        const stepIndicators = Array.from(document.querySelectorAll('.step-indicator'));
+        let currentStepIndex = 0;
+
+        function updateStepDisplay() {
+            steps.forEach((step, index) => {
+                step.style.display = index === currentStepIndex ? 'block' : 'none';
+                step.classList.toggle('active-step', index === currentStepIndex);
+            });
+            stepIndicators.forEach((indicator, index) => {
+                indicator.classList.toggle('active', index === currentStepIndex);
+                indicator.classList.toggle('completed', index < currentStepIndex);
+            });
+        }
+
+        document.querySelectorAll('.next-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentStepIndex < steps.length - 1) {
+                    stepIndicators[currentStepIndex].classList.add('completed'); // Mark current as completed
+                    currentStepIndex++;
+                    updateStepDisplay();
+                }
+            });
+        });
+
+        document.querySelectorAll('.prev-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentStepIndex > 0) {
+                    stepIndicators[currentStepIndex].classList.remove('active'); // Current no longer active
+                    stepIndicators[currentStepIndex].classList.remove('completed'); // Not completed if going back
+                    currentStepIndex--;
+                    updateStepDisplay();
+                }
+            });
+        });
+        
+        stepIndicators.forEach((indicator, index) => {
+            indicator.addEventListener('click', () => {
+                // Allow navigation to previous, completed steps or current step
+                if (index <= currentStepIndex || stepIndicators[index-1]?.classList.contains('completed')) {
+                     // Mark intermediate steps as completed if jumping far ahead to a completed step
+                    for(let i=0; i < index; i++) {
+                        stepIndicators[i].classList.add('completed');
+                    }
+                    currentStepIndex = index;
+                    updateStepDisplay();
+                }
+            });
+        });
+
+        // Initialize first step display
+        updateStepDisplay();
+
+        // --- Prompt Library Frontend Logic ---
+
+        const saveToLibraryButton = document.getElementById('saveToLibraryBtn');
+        const viewLibraryButton = document.getElementById('viewLibraryBtn');
+        const libraryModal = document.getElementById('promptLibraryModal');
+        const exportCurrentPromptButton = document.getElementById('exportCurrentPromptBtn');
+        const exportAllPromptsButton = document.getElementById('exportAllPromptsBtn');
+        const closeModalButton = libraryModal.querySelector('.close-modal-btn');
+        const libraryListDiv = document.getElementById('promptLibraryList');
+        const promptForm = document.getElementById('promptForm');
+
+        if (saveToLibraryButton) {
+            saveToLibraryButton.addEventListener('click', async () => {
+                const promptName = window.prompt("Enter a name for this prompt configuration:");
+                if (!promptName || promptName.trim() === "") {
+                    alert("Prompt name is required to save to library.");
+                    return;
+                }
+
+                // Gather data from the form
+                const formData = new FormData(promptForm);
+                const promptData = {
+                    name: promptName.trim(),
+                    initialPrompt: formData.get('initialPrompt') || '',
+                    context: formData.get('context') || '',
+                    tone: formData.get('tone') || '',
+                    outputFormat: formData.get('outputFormat') || '',
+                    constraints: formData.get('constraints') || ''
+                };
+
+                try {
+                    const response = await fetch('/library/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(promptData),
+                    });
+                    if (response.ok) {
+                        const savedPrompt = await response.json();
+                        alert(`Prompt "${savedPrompt.name}" saved successfully!`);
+                        // Optionally refresh library display if it's open
+                        if (libraryModal.style.display === 'block') {
+                            loadAndDisplayLibrary();
+                        }
+                    } else {
+                        const errorResult = await response.json();
+                        alert(`Error saving prompt: ${errorResult.error || response.statusText}`);
+                    }
+                } catch (error) {
+                    console.error('Error saving prompt:', error);
+                    alert('Failed to save prompt. See console for details.');
+                }
+            });
+        }
+
+        async function loadAndDisplayLibrary() {
+            libraryListDiv.innerHTML = '<p>Loading library...</p>';
+            try {
+                const response = await fetch('/library');
+                if (!response.ok) {
+                    libraryListDiv.innerHTML = `<p class="error-message">Error loading library: ${response.statusText}</p>`;
+                    return;
+                }
+                const prompts = await response.json();
+                if (prompts.length === 0) {
+                    libraryListDiv.innerHTML = '<p>Your prompt library is empty.</p>';
+                    return;
+                }
+                
+                libraryListDiv.innerHTML = ''; // Clear loading message
+                const ul = document.createElement('ul');
+                ul.classList.add('prompt-items-list');
+
+                prompts.forEach(prompt => {
+                    const li = document.createElement('li');
+                    li.classList.add('prompt-item-entry');
+                    li.innerHTML = `
+                        <div class="prompt-item-name">${prompt.name}</div>
+                        <div class="prompt-item-timestamp">${new Date(prompt.timestamp).toLocaleString()}</div>
+                        <div class="prompt-item-actions">
+                            <button type="button" class="load-prompt-btn" data-id="${prompt.id}">Load</button>
+                            <button type="button" class="delete-prompt-btn" data-id="${prompt.id}">Delete</button>
+                        </div>
+                    `;
+                    
+                    // Load button functionality
+                    li.querySelector('.load-prompt-btn').addEventListener('click', async () => {
+                        try {
+                            const loadResponse = await fetch(`/library/${prompt.id}`);
+                            if (!loadResponse.ok) {
+                                alert(`Error loading prompt: ${loadResponse.statusText}`); return;
+                            }
+                            const promptToLoad = await loadResponse.json();
+                            
+                            // Populate form fields
+                            promptForm.elements.initialPrompt.value = promptToLoad.initialPrompt || '';
+                            promptForm.elements.context.value = promptToLoad.context || '';
+                            promptForm.elements.tone.value = promptToLoad.tone || '';
+                            promptForm.elements.outputFormat.value = promptToLoad.outputFormat || '';
+                            promptForm.elements.constraints.value = promptToLoad.constraints || '';
+                            
+                            alert(`Prompt "${promptToLoad.name}" loaded!`);
+                            libraryModal.style.display = 'none'; // Close modal
+                            currentStepIndex = 0; // Go to first step
+                            updateStepDisplay();
+                        } catch (e) {
+                            alert('Failed to load prompt details.'); console.error(e);
+                        }
+                    });
+
+                    // Delete button functionality
+                    li.querySelector('.delete-prompt-btn').addEventListener('click', async () => {
+                        if (!confirm(`Are you sure you want to delete the prompt "${prompt.name}"?`)) {
+                            return;
+                        }
+                        try {
+                            const deleteResponse = await fetch(`/library/${prompt.id}`, { method: 'DELETE' });
+                            if (deleteResponse.ok) {
+                                alert('Prompt deleted successfully.');
+                                loadAndDisplayLibrary(); // Refresh list
+                            } else {
+                                alert(`Error deleting prompt: ${deleteResponse.statusText}`);
+                            }
+                        } catch (e) {
+                            alert('Failed to delete prompt.'); console.error(e);
+                        }
+                    });
+                    ul.appendChild(li);
+                });
+                libraryListDiv.appendChild(ul);
+
+            } catch (error) {
+                console.error('Error fetching library:', error);
+                libraryListDiv.innerHTML = '<p class="error-message">Failed to fetch prompt library. See console for details.</p>';
+            }
+        }
+
+        if (viewLibraryButton) {
+            viewLibraryButton.addEventListener('click', () => {
+                libraryModal.style.display = 'block';
+                loadAndDisplayLibrary();
+            });
+        }
+
+        if (closeModalButton) {
+            closeModalButton.addEventListener('click', () => {
+                libraryModal.style.display = 'none';
+            });
+        }
+
+        // Close modal if clicked outside of modal-content
+        window.addEventListener('click', (event) => {
+            if (event.target === libraryModal) {
+                libraryModal.style.display = 'none';
+            }
+        });
+
+        // --- Export Logic ---
+        function triggerJsonDownload(data, filename) {
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        if (exportCurrentPromptButton) {
+            exportCurrentPromptButton.addEventListener('click', () => {
+                const formData = new FormData(promptForm);
+                const promptData = {
+                    name: "Current Prompt Export", // Default name, can be improved
+                    timestamp: new Date().toISOString(),
+                    initialPrompt: formData.get('initialPrompt') || '',
+                    context: formData.get('context') || '',
+                    tone: formData.get('tone') || '',
+                    outputFormat: formData.get('outputFormat') || '',
+                    constraints: formData.get('constraints') || ''
+                };
+                // Attempt to get a name for the file
+                const promptNameInput = window.prompt("Enter a name for the exported prompt (optional, for filename):", "current_prompt");
+                let filename = "prompt_export.json";
+                if (promptNameInput && promptNameInput.trim() !== "") {
+                    filename = `${promptNameInput.trim().replace(/[^a-z0-9_.-]/gi, '_')}.json`;
+                }
+                triggerJsonDownload(promptData, filename);
+            });
+        }
+
+        if (exportAllPromptsButton) {
+            exportAllPromptsButton.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/library');
+                    if (!response.ok) {
+                        alert(`Error fetching library for export: ${response.statusText}`);
+                        return;
+                    }
+                    const prompts = await response.json();
+                    if (prompts.length === 0) {
+                        alert("Library is empty. Nothing to export.");
+                        return;
+                    }
+                    triggerJsonDownload(prompts, "prompt_library_export.json");
+                } catch (error) {
+                    console.error('Error exporting all prompts:', error);
+                    alert('Failed to export all prompts. See console for details.');
+                }
+            });
+        }
+
+        // --- Import Logic ---
+        const importFileInput = document.getElementById('importFile');
+        const importedFileActionsDiv = document.getElementById('importedFileActions');
+        const loadImportedToEditorButton = document.getElementById('loadImportedToEditorBtn');
+        const addImportedToLibraryButton = document.getElementById('addImportedToLibraryBtn');
+        const loadedFileNameP = document.getElementById('loadedFileName');
+        let parsedJsonData = null;
+
+        if (importFileInput) {
+            // Trigger the hidden file input when the label is clicked
+            document.querySelector('.import-btn-label').addEventListener('click', () => importFileInput.click());
+
+            importFileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    importedFileActionsDiv.style.display = 'none';
+                    parsedJsonData = null;
+                    return;
+                }
+
+                loadedFileNameP.textContent = `Selected: ${file.name}`;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        parsedJsonData = JSON.parse(e.target.result);
+                        if (parsedJsonData) {
+                            importedFileActionsDiv.style.display = 'block';
+                            // Determine if it's likely a single prompt or multiple
+                            if (Array.isArray(parsedJsonData)) {
+                                loadImportedToEditorButton.disabled = true;
+                                loadImportedToEditorButton.title = "Cannot load an array of prompts to editor. Use 'Add to Library'.";
+                                addImportedToLibraryButton.disabled = false;
+                                addImportedToLibraryButton.title = "Add all prompts in this array to your library.";
+                            } else if (typeof parsedJsonData === 'object' && parsedJsonData !== null) {
+                                loadImportedToEditorButton.disabled = false;
+                                loadImportedToEditorButton.title = "Load this prompt into the editor.";
+                                addImportedToLibraryButton.disabled = true; // Or allow saving a single prompt to library too
+                                addImportedToLibraryButton.title = "This is a single prompt. Use 'Load to Editor' or save manually from editor.";
+                            } else {
+                                throw new Error("Invalid JSON structure for prompt data.");
+                            }
+                        } else {
+                             throw new Error("Parsed JSON data is null or empty.");
+                        }
+                    } catch (err) {
+                        console.error('Error parsing JSON file:', err);
+                        alert(`Error reading or parsing JSON file: ${err.message}`);
+                        importedFileActionsDiv.style.display = 'none';
+                        parsedJsonData = null;
+                    }
+                };
+                reader.onerror = () => {
+                    alert('Error reading file.');
+                    importedFileActionsDiv.style.display = 'none';
+                    parsedJsonData = null;
+                };
+                reader.readAsText(file);
+                importFileInput.value = null; // Reset file input
+            });
+        }
+
+        if (loadImportedToEditorButton) {
+            loadImportedToEditorButton.addEventListener('click', () => {
+                if (!parsedJsonData || Array.isArray(parsedJsonData)) {
+                    alert("No valid single prompt data loaded to import to editor.");
+                    return;
+                }
+                const promptToLoad = parsedJsonData; // It's a single object
+                 // Populate form fields
+                promptForm.elements.initialPrompt.value = promptToLoad.initialPrompt || '';
+                promptForm.elements.context.value = promptToLoad.context || '';
+                promptForm.elements.tone.value = promptToLoad.tone || '';
+                promptForm.elements.outputFormat.value = promptToLoad.outputFormat || '';
+                promptForm.elements.constraints.value = promptToLoad.constraints || '';
+                
+                alert(`Prompt data loaded into editor! Please review.`);
+                currentStepIndex = 0; // Go to first step
+                updateStepDisplay();
+                importedFileActionsDiv.style.display = 'none'; // Hide actions after use
+                parsedJsonData = null;
+            });
+        }
+
+        if (addImportedToLibraryButton) {
+            addImportedToLibraryButton.addEventListener('click', async () => {
+                if (!parsedJsonData || !Array.isArray(parsedJsonData)) {
+                    alert("No valid array of prompts loaded to add to library.");
+                    return;
+                }
+                const promptsToImport = parsedJsonData;
+                let successCount = 0;
+                let errorCount = 0;
+
+                // Simple confirmation if importing many prompts
+                if (promptsToImport.length > 5) {
+                    if (!confirm(`You are about to import ${promptsToImport.length} prompts. Continue?`)) {
+                        return;
+                    }
+                }
+
+
+                for (const prompt of promptsToImport) {
+                    const promptData = {
+                        name: prompt.name || `Imported Prompt ${Date.now()}`,
+                        initialPrompt: prompt.initialPrompt || '',
+                        context: prompt.context || '',
+                        tone: prompt.tone || '',
+                        outputFormat: prompt.outputFormat || '',
+                        constraints: prompt.constraints || ''
+                        // timestamp will be set by backend
+                    };
+                    try {
+                        const response = await fetch('/library/save', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(promptData),
+                        });
+                        if (response.ok) {
+                            successCount++;
+                        } else {
+                            errorCount++;
+                            console.warn(`Failed to import prompt: ${prompt.name || 'Unnamed'} - ${response.statusText}`);
+                        }
+                    } catch (err) {
+                        errorCount++;
+                        console.error(`Error importing prompt: ${prompt.name || 'Unnamed'}`, err);
+                    }
+                }
+                alert(`Import complete. Successfully imported: ${successCount}. Failed: ${errorCount}.`);
+                if (libraryModal.style.display === 'block') { // Refresh library if open
+                    loadAndDisplayLibrary();
+                }
+                importedFileActionsDiv.style.display = 'none'; // Hide actions after use
+                parsedJsonData = null;
+            });
+        }
+
 
         document.getElementById('copyPromptButton').addEventListener('click', function() {
             const initialPromptTextarea = document.getElementById('initialPrompt');
